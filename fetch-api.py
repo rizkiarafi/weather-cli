@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import requests
 import os
 import socket
+import json
 
 def get_ip6():
     hostname = socket.gethostname()
