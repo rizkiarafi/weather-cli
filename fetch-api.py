@@ -68,21 +68,38 @@ def fetch_ip_geo_api():
 
     return geo_data
 
+test_url = "https://httpbin.org/status/404"
+
 def fetch_weather_api():
-    geo_data = fetch_ip_geo_api()
     weather_data = None
-    if geo_data:
-        api_key = os.getenv("OPENWEATHERMAP_API_KEY")
-        lat = geo_data["latitude"]
-        lon = geo_data["longitude"]
-
-        url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
-
-        response = requests.get(url)
-        if response.status_code == 200:
-            weather_data = {"fetch_dt": round(time.time()), "data": response.json()}
+    weather_cache = load_json("weather-cache.json")
+    function_name = inspect.currentframe().f_code.co_name
+    update_duration = 20
+    if weather_cache:
+        weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
+        if weather_cache_age < update_duration:
+            weather_data = weather_cache
+            print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
+            return weather_data
         else:
-            print(f"ERROR: {response.status_code}")
+            print(f"{function_name}: Updating the cache because its age is more than {update_duration} seconds")
+    
+    geo_data = fetch_ip_geo_api()
+    api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+    lat = geo_data["latitude"]
+    lon = geo_data["longitude"]
+    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
+
+    response = requests.get(url)
+    if response.status_code == 200:
+        weather_data = {"fetch_dt": round(time.time()), "data": response.json()}
+        print(f"{function_name}: Requesting success!")
+        write_json(weather_data, "weather-cache.json")
+    else:
+        print(f"ERROR: {response.status_code}")
+        if weather_cache:
+            weather_data = weather_cache
+
     return weather_data
 
 print(fetch_weather_api())
