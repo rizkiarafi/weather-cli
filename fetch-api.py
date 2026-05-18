@@ -76,11 +76,11 @@ def fetch_weather_api():
         lat = geo_data["latitude"]
         lon = geo_data["longitude"]
 
-        url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}"
+        url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
 
         response = requests.get(url)
         if response.status_code == 200:
-            weather_data = response.json()
+            weather_data = {"fetch_dt": round(time.time()), "data": response.json()}
         else:
             print(f"ERROR: {response.status_code}")
     return weather_data
