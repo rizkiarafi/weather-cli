@@ -3,6 +3,12 @@ import requests
 import os
 import socket
 import json
+import time
+
+load_dotenv()
+
+OPENWEATHERMAP_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
+IPLOCATE_BASE_URL = "https://iplocate.io/api/lookup/"
 
 def load_json(data_file):
     try:
@@ -30,7 +36,6 @@ def get_ip6():
     return ip6
 
 def fetch_ip_geo_api():
-    load_dotenv()
     iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
 
     ip6 = get_ip6()
@@ -38,8 +43,7 @@ def fetch_ip_geo_api():
     geo_data = None
     geo_cache = load_json("ip-geo-cache.json")
 
-    BASE_URL = "https://iplocate.io/api/lookup/"
-    url = f"{BASE_URL}{ip6}?apikey={iplocate_api_key}"
+    url = f"{IPLOCATE_BASE_URL}{ip6}?apikey={iplocate_api_key}"
 
     if geo_cache:
         if ip6 == geo_cache["user_ip"]:
@@ -62,4 +66,21 @@ def fetch_ip_geo_api():
 
     return geo_data
 
-print(fetch_ip_geo_api())
+def fetch_weather_api():
+    geo_data = fetch_ip_geo_api()
+    weather_data = None
+    if geo_data:
+        api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+        lat = geo_data["latitude"]
+        lon = geo_data["longitude"]
+
+        url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}"
+
+        response = requests.get(url)
+        if response.status_code == 200:
+            weather_data = response.json()
+        else:
+            print(f"ERROR: {response.status_code}")
+    return weather_data
+
+print(fetch_weather_api())
