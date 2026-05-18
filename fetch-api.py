@@ -4,6 +4,7 @@ import os
 import socket
 import json
 import time
+import inspect
 
 load_dotenv()
 
@@ -44,11 +45,12 @@ def fetch_ip_geo_api():
     geo_cache = load_json("ip-geo-cache.json")
 
     url = f"{IPLOCATE_BASE_URL}{ip6}?apikey={iplocate_api_key}"
+    function_name = inspect.currentframe().f_code.co_name
 
     if geo_cache:
         if ip6 == geo_cache["user_ip"]:
-            print("Using cache if exists when the IP is the same with previous IP")
             geo_data = geo_cache
+            print(f"{function_name}: Used cache if exists when the IP is the same with previous IP")
             return geo_data
     
     response = requests.get(url)
@@ -57,11 +59,11 @@ def fetch_ip_geo_api():
         geo_data = response.json()
         geo_data["user_ip"] = ip6
         write_json(geo_data, "ip-geo-cache.json")
-        print("Requesting success!")
+        print(f"{function_name}: Requesting success!")
     else:
         if geo_cache:
             geo_data = geo_cache
-            print("Using cache if exists when the API throws an error")
+            print(f"{function_name}: Used cache if exists when the API throws an error")
             print(f"ERROR: {response.status_code}")
 
     return geo_data
