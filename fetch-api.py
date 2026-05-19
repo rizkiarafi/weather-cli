@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+from pathlib import Path
 import requests
 import os
 import socket
@@ -11,16 +12,23 @@ load_dotenv()
 OPENWEATHERMAP_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 IPLOCATE_BASE_URL = "https://iplocate.io/api/lookup/"
 
-def load_json(data_file):
-    try:
-        with open(data_file, "r") as read:
+CACHE_FILEPATH = Path("./cache-data")
+if not CACHE_FILEPATH.exists():
+    print("test")
+    CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
+
+def load_json(data_file: str):
+    json_filepath = CACHE_FILEPATH / data_file
+    if json_filepath.exists():
+        with open(json_filepath, "r") as read:
             ip_cache = json.load(read)
             return ip_cache
-    except FileNotFoundError:
+    else:
         return None
 
 def write_json(content, data_file):
-    with open(data_file, "w") as write:
+    json_filepath = CACHE_FILEPATH / data_file
+    with open(json_filepath, "w") as write:
         json.dump(content, write, indent=2)
 
 def get_ip6():
@@ -74,7 +82,7 @@ def fetch_weather_api():
     weather_data = None
     weather_cache = load_json("weather-cache.json")
     function_name = inspect.currentframe().f_code.co_name
-    update_duration = 20
+    update_duration = 60
     if weather_cache:
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
         if weather_cache_age < update_duration:
