@@ -1,5 +1,6 @@
 from dotenv import load_dotenv
 from pathlib import Path
+from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout
 import requests
 import os
 import socket
@@ -13,7 +14,9 @@ OPENWEATHERMAP_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 IPLOCATE_BASE_URL = "https://iplocate.io/api/lookup/"
 
 CACHE_FILEPATH = Path("./cache-data")
-CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
+
+CONNECT_TIMEOUT_DURATION = 3.05
+READ_TIMEOUT_DURATION = 21
 
 def load_json(data_file: str):
     json_filepath = CACHE_FILEPATH / data_file
@@ -25,6 +28,7 @@ def load_json(data_file: str):
         return None
 
 def write_json(content, data_file):
+    CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
     json_filepath = CACHE_FILEPATH / data_file
     with open(json_filepath, "w") as write:
         json.dump(content, write, indent=2)
@@ -44,9 +48,7 @@ def get_ip6():
 
 def fetch_ip_geo_api():
     iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
-
     ip6 = get_ip6()
-
     geo_data = None
     geo_cache = load_json("ip-geo-cache.json")
 
@@ -59,18 +61,25 @@ def fetch_ip_geo_api():
             print(f"{function_name}: Used cache if exists when the IP is the same with previous IP")
             return geo_data
     
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        geo_data = response.json()
-        geo_data["user_ip"] = ip6
-        write_json(geo_data, "ip-geo-cache.json")
-        print(f"{function_name}: Requesting success!")
+    try:
+        response = requests.get(url, timeout=(CONNECT_TIMEOUT_DURATION, READ_TIMEOUT_DURATION))
+    except ConnectionError:
+        print("ConnectionError: No connection. Nothing will be shown!")
+    except ConnectTimeout:
+        print("ConnectTimeout: Your internet is too slow to send request. Nothing will be shown!")
+    except ReadTimeout:
+        print(f'ConnectTimeout: "{url}" takes too long to send back response. Nothing will be shown!')
     else:
-        if geo_cache:
-            geo_data = geo_cache
-            print(f"{function_name}: Used cache if exists when the API throws an error")
-            print(f"ERROR: {response.status_code}")
+        if response.status_code == 200:
+            geo_data = response.json()
+            geo_data["user_ip"] = ip6
+            write_json(geo_data, "ip-geo-cache.json")
+            print(f"{function_name}: Requesting success!")
+        else:
+            if geo_cache:
+                geo_data = geo_cache
+                print(f"{function_name}: Used cache if exists when the API throws an error")
+                print(f"ERROR: {response.status_code}")
 
     return geo_data
 
@@ -84,12 +93,16 @@ def fetch_weather_api():
     geo_data = fetch_ip_geo_api()
     if weather_cache:
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
-        if weather_cache_age < update_duration and weather_cache["ip"] == geo_data["ip"]:
+        if weather_cache["ip"] == geo_data["ip"]:
             weather_data = weather_cache
-            print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
-            return weather_data
+            if weather_cache_age < update_duration:
+                weather_data = weather_cache
+                print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
+                return weather_data
+            else:
+                print(f"{function_name}: Updating the cache because its age is more than {update_duration} seconds")    
         else:
-            print(f"{function_name}: Updating the cache because its age is more than {update_duration} seconds")
+            print("{function_name}: Updating the cache because using different IP Address")
     
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
     lat = geo_data["latitude"]
@@ -102,7 +115,7 @@ def fetch_weather_api():
             "fetch_dt": round(time.time()),
             "ip": geo_data["ip"],
             "data": response.json()
-            }
+        }
         print(f"{function_name}: Requesting success!")
         write_json(weather_data, "weather-cache.json")
     else:
@@ -112,4 +125,4 @@ def fetch_weather_api():
 
     return weather_data
 
-print(fetch_weather_api())
+print(fetch_ip_geo_api())
