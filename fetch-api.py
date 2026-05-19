@@ -13,9 +13,7 @@ OPENWEATHERMAP_BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 IPLOCATE_BASE_URL = "https://iplocate.io/api/lookup/"
 
 CACHE_FILEPATH = Path("./cache-data")
-if not CACHE_FILEPATH.exists():
-    print("test")
-    CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
+CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
 
 def load_json(data_file: str):
     json_filepath = CACHE_FILEPATH / data_file
@@ -35,7 +33,7 @@ def get_ip6():
     hostname = socket.gethostname()
     addresses = socket.getaddrinfo(hostname, None, socket.AF_INET6)
     try:
-        user_ip = {"ip": addresses[1][4][0]}
+        user_ip = {"ip": addresses[2][4][0]}
         ip6 = user_ip["ip"]
         write_json(user_ip, "ip-cache.json")
     except IndexError:
@@ -83,16 +81,16 @@ def fetch_weather_api():
     weather_cache = load_json("weather-cache.json")
     function_name = inspect.currentframe().f_code.co_name
     update_duration = 60
+    geo_data = fetch_ip_geo_api()
     if weather_cache:
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
-        if weather_cache_age < update_duration:
+        if weather_cache_age < update_duration and weather_cache["ip"] == geo_data["ip"]:
             weather_data = weather_cache
             print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
             return weather_data
         else:
             print(f"{function_name}: Updating the cache because its age is more than {update_duration} seconds")
     
-    geo_data = fetch_ip_geo_api()
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
     lat = geo_data["latitude"]
     lon = geo_data["longitude"]
@@ -100,7 +98,11 @@ def fetch_weather_api():
 
     response = requests.get(url)
     if response.status_code == 200:
-        weather_data = {"fetch_dt": round(time.time()), "data": response.json()}
+        weather_data = {
+            "fetch_dt": round(time.time()),
+            "ip": geo_data["ip"],
+            "data": response.json()
+            }
         print(f"{function_name}: Requesting success!")
         write_json(weather_data, "weather-cache.json")
     else:
