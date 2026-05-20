@@ -107,7 +107,7 @@ def fetch_weather_api():
         lat = geo_data["latitude"]
         lon = geo_data["longitude"]
     else:
-        lat, lon = None, None
+        return None
     url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric"
     try:
         response = requests.get(url)
