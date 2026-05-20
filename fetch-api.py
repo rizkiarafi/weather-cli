@@ -37,7 +37,7 @@ def get_ip6():
     hostname = socket.gethostname()
     addresses = socket.getaddrinfo(hostname, None, socket.AF_INET6)
     try:
-        user_ip = {"ip": addresses[2][4][0]}
+        user_ip = {"ip": addresses[1][4][0]}
         ip6 = user_ip["ip"]
         write_json(user_ip, "ip-cache.json")
     except IndexError:
@@ -64,7 +64,7 @@ def fetch_ip_geo_api():
     try:
         response = requests.get(url, timeout=(CONNECT_TIMEOUT_DURATION, READ_TIMEOUT_DURATION))
     except ConnectionError:
-        print("ConnectionError: No connection. Nothing will be shown!")
+        print("ConnectionError: You have no internet connection!")
     except ConnectTimeout:
         print("ConnectTimeout: Your internet is too slow to send request. Nothing will be shown!")
     except ReadTimeout:
@@ -92,37 +92,42 @@ def fetch_weather_api():
     update_duration = 60
     geo_data = fetch_ip_geo_api()
     if weather_cache:
+        weather_data = weather_cache
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
-        if weather_cache["ip"] == geo_data["ip"]:
-            weather_data = weather_cache
-            if weather_cache_age < update_duration:
-                weather_data = weather_cache
-                print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
-                return weather_data
-            else:
-                print(f"{function_name}: Updating the cache because its age is more than {update_duration} seconds")    
+        if weather_cache_age < update_duration and weather_cache["ip"] == geo_data["ip"]:
+            print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
+            return weather_data
         else:
-            print("{function_name}: Updating the cache because using different IP Address")
+            weather_data["fetch_dt"] = round(time.time())
+            write_json(weather_data, "weather-cache.json")
+            print(f"{function_name}: Updating the cache because the cache is expired or using different IP Address")
     
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
-    lat = geo_data["latitude"]
-    lon = geo_data["longitude"]
+    lat = geo_data["latitude"] if geo_data else None
+    lon = geo_data["longitude"] if geo_data else None
     url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
-
-    response = requests.get(url)
-    if response.status_code == 200:
-        weather_data = {
-            "fetch_dt": round(time.time()),
-            "ip": geo_data["ip"],
-            "data": response.json()
-        }
-        print(f"{function_name}: Requesting success!")
-        write_json(weather_data, "weather-cache.json")
+    try:
+        response = requests.get(url)
+    except ConnectionError:
+        print(f"ConnectionError in {function_name}: You have no internet connection!")
+    except ConnectTimeout:
+        print(f"ConnectTimeout in {function_name}: Your internet is too slow to send request")
+    except ReadTimeout:
+        print(f'ConnectTimeout in {function_name}: "{url}" takes too long to send back response')
     else:
-        print(f"ERROR: {response.status_code}")
-        if weather_cache:
-            weather_data = weather_cache
+        if response.status_code == 200:
+            weather_data = {
+                "fetch_dt": round(time.time()),
+                "ip": geo_data["ip"],
+                "data": response.json()
+            }
+            print(f"{function_name}: Requesting success!")
+            write_json(weather_data, "weather-cache.json")
+        else:
+            print(f"ERROR: {response.status_code}")
+            if weather_cache:
+                weather_data = weather_cache
 
     return weather_data
 
-print(fetch_ip_geo_api())
+print(fetch_weather_api())
