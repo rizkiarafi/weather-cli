@@ -64,11 +64,11 @@ def fetch_ip_geo_api():
     try:
         response = requests.get(url, timeout=(CONNECT_TIMEOUT_DURATION, READ_TIMEOUT_DURATION))
     except ConnectionError:
-        print("ConnectionError: You have no internet connection!")
+        print(f"ConnectionError in {function_name}: You have no internet connection!")
     except ConnectTimeout:
-        print("ConnectTimeout: Your internet is too slow to send request. Nothing will be shown!")
+        print(f"ConnectTimeout in {function_name}: Your internet is too slow to send request")
     except ReadTimeout:
-        print(f'ConnectTimeout: "{url}" takes too long to send back response. Nothing will be shown!')
+        print(f'ConnectTimeout in {function_name}: "{url}" takes too long to send back response')
     else:
         if response.status_code == 200:
             geo_data = response.json()
@@ -103,8 +103,11 @@ def fetch_weather_api():
             print(f"{function_name}: Updating the cache because the cache is expired or using different IP Address")
     
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
-    lat = geo_data["latitude"] if geo_data else None
-    lon = geo_data["longitude"] if geo_data else None
+    if geo_data:
+        lat = geo_data["latitude"]
+        lon = geo_data["longitude"]
+    else:
+        lat, lon = None, None
     url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
     try:
         response = requests.get(url)
