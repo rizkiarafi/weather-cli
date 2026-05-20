@@ -108,7 +108,7 @@ def fetch_weather_api():
         lon = geo_data["longitude"]
     else:
         lat, lon = None, None
-    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric&cnt=3"
+    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric"
     try:
         response = requests.get(url)
     except ConnectionError:
