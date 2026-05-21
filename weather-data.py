@@ -85,8 +85,6 @@ def fetch_ip_geo_api():
 
     return geo_data
 
-test_url = "https://httpbin.org/status/404"
-
 def fetch_weather_api():
     weather_data = None
     weather_cache = load_json("weather-cache.json")
@@ -131,5 +129,3 @@ def fetch_weather_api():
                 weather_data = weather_cache
 
     return weather_data
-
-print(fetch_weather_api())
