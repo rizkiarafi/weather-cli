@@ -18,6 +18,9 @@ CACHE_FILEPATH = Path("./cache-data")
 CONNECT_TIMEOUT_DURATION = 3.05
 READ_TIMEOUT_DURATION = 21
 
+weather_api_key = os.getenv("OPENWEATHERMAP_API_KEY")
+iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
+
 def load_json(data_file: str):
     json_filepath = CACHE_FILEPATH / data_file
     if json_filepath.exists():
@@ -47,7 +50,6 @@ def get_ip6():
     return ip6
 
 def fetch_ip_geo_api():
-    iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
     ip6 = get_ip6()
     geo_data = None
     geo_cache = load_json("ip-geo-cache.json")
@@ -100,13 +102,12 @@ def fetch_weather_api():
         else:
             print(f"{function_name}: Updating the cache because the cache is expired or using different IP Address")
     
-    api_key = os.getenv("OPENWEATHERMAP_API_KEY")
     if geo_data:
         lat = geo_data["latitude"]
         lon = geo_data["longitude"]
     else:
         return None
-    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={weather_api_key}&units=metric"
     try:
         response = requests.get(url)
     except ConnectionError:
