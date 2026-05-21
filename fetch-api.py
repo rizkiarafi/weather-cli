@@ -98,8 +98,6 @@ def fetch_weather_api():
             print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
             return weather_data
         else:
-            weather_data["fetch_dt"] = round(time.time())
-            write_json(weather_data, "weather-cache.json")
             print(f"{function_name}: Updating the cache because the cache is expired or using different IP Address")
     
     api_key = os.getenv("OPENWEATHERMAP_API_KEY")
