@@ -14,7 +14,7 @@ if weather_data:
         dt = weather["dt"]
         weather_desc = weather["weather"][0]["description"]
         temprature = weather["main"]["temp_max"]
-        humidity = weather["main"]["temp_max"]
+        humidity = weather["main"]["humidity"]
         formatted_dt = datetime.fromtimestamp(dt)
         
         weather_dict = {
