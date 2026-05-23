@@ -54,14 +54,18 @@ def fetch_ip_geo_api():
     geo_data = None
     geo_cache = load_json("ip-geo-cache.json")
 
-    url = f"{IPLOCATE_BASE_URL}{ip6}?apikey={iplocate_api_key}"
     function_name = inspect.currentframe().f_code.co_name
 
     if geo_cache:
-        if ip6 == geo_cache["user_ip"]:
-            geo_data = geo_cache
-            print(f"{function_name}: Used cache if exists when the IP is the same with previous IP")
-            return geo_data
+        if ip6:
+            if ip6 == geo_cache["user_ip"]:
+                geo_data = geo_cache
+                print(f"{function_name}: Used cache if exists when the IP is the same with previous IP")
+                return geo_data
+        else: 
+            ip6 = geo_cache["user_ip"]
+    
+    url = f"{IPLOCATE_BASE_URL}{ip6}?apikey={iplocate_api_key}"
     
     try:
         response = requests.get(url, timeout=(CONNECT_TIMEOUT_DURATION, READ_TIMEOUT_DURATION))
