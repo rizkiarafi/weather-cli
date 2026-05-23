@@ -7,6 +7,7 @@ import socket
 import json
 import time
 import inspect
+from typing import Any
 
 load_dotenv()
 
@@ -32,7 +33,7 @@ def load_json(data_file: str):
     else:
         return None
 
-def write_json(content, data_file):
+def write_json(content: Any, data_file: str):
     """Write content to a JSON file in the cache directory, creating it if needed."""
     CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
     json_filepath = CACHE_FILEPATH / data_file
