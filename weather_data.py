@@ -17,6 +17,7 @@ CACHE_FILEPATH = Path("./cache-data")
 
 CONNECT_TIMEOUT_DURATION = 3.05
 READ_TIMEOUT_DURATION = 21
+UPDATE_DURATION = 60 * 60
 
 weather_api_key = os.getenv("OPENWEATHERMAP_API_KEY")
 iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
@@ -93,13 +94,12 @@ def fetch_weather_api():
     weather_data = None
     weather_cache = load_json("weather-cache.json")
     function_name = inspect.currentframe().f_code.co_name
-    update_duration = 60
     geo_data = fetch_ip_geo_api()
     if weather_cache:
         weather_data = weather_cache["data"]
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
-        if weather_cache_age < update_duration and weather_cache["ip"] == geo_data["ip"]:
-            print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
+        if weather_cache_age < UPDATE_DURATION and weather_cache["ip"] == geo_data["ip"]:
+            print(f"{function_name}: Used cache if exists and its age is less than {UPDATE_DURATION} seconds")
             return weather_data
         else:
             print(f"{function_name}: Updating the cache because the cache is expired or using different IP Address")
