@@ -92,7 +92,7 @@ def fetch_weather_api():
     update_duration = 60
     geo_data = fetch_ip_geo_api()
     if weather_cache:
-        weather_data = weather_cache
+        weather_data = weather_cache["data"]
         weather_cache_age = round(time.time()) - weather_cache["fetch_dt"]
         if weather_cache_age < update_duration and weather_cache["ip"] == geo_data["ip"]:
             print(f"{function_name}: Used cache if exists and its age is less than {update_duration} seconds")
@@ -103,29 +103,29 @@ def fetch_weather_api():
     if geo_data:
         lat = geo_data["latitude"]
         lon = geo_data["longitude"]
-    else:
-        return None
-    url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={weather_api_key}&units=metric"
-    try:
-        response = requests.get(url)
-    except ConnectionError:
-        print(f"ConnectionError in {function_name}: You have no internet connection!")
-    except ConnectTimeout:
-        print(f"ConnectTimeout in {function_name}: Your internet is too slow to send request")
-    except ReadTimeout:
-        print(f'ConnectTimeout in {function_name}: "{url}" takes too long to send back response')
-    else:
-        if response.status_code == 200:
-            weather_data = {
-                "fetch_dt": round(time.time()),
-                "ip": geo_data["ip"],
-                "data": response.json()
-            }
-            print(f"{function_name}: Requesting success!")
-            write_json(weather_data, "weather-cache.json")
+
+        url = f"{OPENWEATHERMAP_BASE_URL}?lat={lat}&lon={lon}&appid={weather_api_key}&units=metric"
+        try:
+            response = requests.get(url)
+        except ConnectionError:
+            print(f"ConnectionError in {function_name}: You have no internet connection!")
+        except ConnectTimeout:
+            print(f"ConnectTimeout in {function_name}: Your internet is too slow to send request")
+        except ReadTimeout:
+            print(f'ConnectTimeout in {function_name}: "{url}" takes too long to send back response')
         else:
-            print(f"ERROR: {response.status_code}")
-            if weather_cache:
-                weather_data = weather_cache
+            if response.status_code == 200:
+                weather_data = {
+                    "fetch_dt": round(time.time()),
+                    "ip": geo_data["ip"],
+                    "data": response.json()
+                }
+                print(f"{function_name}: Requesting success!")
+                write_json(weather_data, "weather-cache.json")
+                weather_data = weather_data["data"]
+            else:
+                print(f"ERROR: {response.status_code}")
+                if weather_cache:
+                    weather_data = weather_cache
 
     return weather_data
