@@ -23,6 +23,7 @@ weather_api_key = os.getenv("OPENWEATHERMAP_API_KEY")
 iplocate_api_key = os.getenv("IPLOCATE_API_KEY")
 
 def load_json(data_file: str):
+    """Load cached JSON data from a file in the cache directory."""
     json_filepath = CACHE_FILEPATH / data_file
     if json_filepath.exists():
         with open(json_filepath, "r") as read:
@@ -32,12 +33,14 @@ def load_json(data_file: str):
         return None
 
 def write_json(content, data_file):
+    """Write content to a JSON file in the cache directory, creating it if needed."""
     CACHE_FILEPATH.mkdir(parents=True, exist_ok=True)
     json_filepath = CACHE_FILEPATH / data_file
     with open(json_filepath, "w") as write:
         json.dump(content, write, indent=2)
 
 def get_ip6():
+    """Retrieve the host's IPv6 address, falling back to cached IP if unavailable."""
     hostname = socket.gethostname()
     addresses = socket.getaddrinfo(hostname, None, socket.AF_INET6)
     try:
@@ -51,6 +54,7 @@ def get_ip6():
     return ip6
 
 def fetch_ip_geo_api():
+    """Fetch location details based on the user's IP, using cache when possible."""
     ip6 = get_ip6()
     geo_data = None
     geo_cache = load_json("ip-geo-cache.json")
@@ -91,6 +95,7 @@ def fetch_ip_geo_api():
     return geo_data
 
 def fetch_weather_api():
+    """Fetch weather forecast based on user location, utilizing local cache."""
     weather_data = None
     weather_cache = load_json("weather-cache.json")
     function_name = inspect.currentframe().f_code.co_name
