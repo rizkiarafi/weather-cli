@@ -8,13 +8,24 @@ per_day_index = [round(weather_stamps / 5) * i for i in range(5)]
 weather_data = fetch_weather_api()
 
 if weather_data:
-    for day, weather_stamp in enumerate(per_day_index):
-        dt = weather_data["list"][weather_stamp]["dt"]
+    five_days_weather = []
+    for weather_stamp in (per_day_index):
+        weather = weather_data["list"][weather_stamp]
+        dt = weather["dt"]
+        weather_desc = weather["weather"][0]["description"]
+        temprature = weather["main"]["temp_max"]
+        humidity = weather["main"]["temp_max"]
         formatted_dt = datetime.fromtimestamp(dt)
-        weather = weather_data["list"][weather_stamp]["weather"][0]["description"]
         
-        print(formatted_dt.strftime("%A"))
-        print(formatted_dt)
-        print(weather, end="\n\n")
+        weather_dict = {
+            "date": formatted_dt,
+            "weather": weather_desc,
+            "celc_temprature": temprature,
+            "humidity": humidity
+        }
+
+        five_days_weather.append(weather_dict)
+
+    print(pd.DataFrame(five_days_weather))
 else:
     print("None!")
