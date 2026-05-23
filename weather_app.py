@@ -1,31 +1,43 @@
-from weather_data import fetch_weather_api
 from datetime import datetime
 import pandas as pd
+from weather_data import fetch_weather_api
 
-weather_stamps = 40
-per_day_index = [round(weather_stamps / 5) * i for i in range(5)]
 
-weather_data = fetch_weather_api()
+def main() -> None:
+    """Fetches weather forecast data and displays a 5-day daily summary."""
+    weather_stamps = 40
+    # Downsample to 5 indices, representing approximately one reading per day (every 24 hours)
+    per_day_index = [round(weather_stamps / 5) * i for i in range(5)]
 
-if weather_data:
+    weather_data = fetch_weather_api()
+
+    if not weather_data:
+        print("No weather data could be retrieved.")
+        return
+
     five_days_weather = []
-    for weather_stamp in (per_day_index):
+    for weather_stamp in per_day_index:
         weather = weather_data["list"][weather_stamp]
-        dt = weather["dt"]
+        
+        # Extract forecast details
+        timestamp = weather["dt"]
         weather_desc = weather["weather"][0]["description"]
-        temprature = weather["main"]["temp_max"]
+        temperature = weather["main"]["temp_max"]
         humidity = weather["main"]["humidity"]
-        formatted_dt = datetime.fromtimestamp(dt)
+        formatted_date = datetime.fromtimestamp(timestamp)
         
         weather_dict = {
-            "date": formatted_dt,
+            "date": formatted_date,
             "weather": weather_desc,
-            "celc_temprature": temprature,
+            "celsius_temperature": temperature,
             "humidity": humidity
         }
-
         five_days_weather.append(weather_dict)
 
-    print(pd.DataFrame(five_days_weather))
-else:
-    print("None!")
+    # Output formatted forecast as a DataFrame table
+    df = pd.DataFrame(five_days_weather)
+    print(df)
+
+
+if __name__ == "__main__":
+    main()
