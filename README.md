@@ -30,7 +30,7 @@ A command-line interface (CLI) Python application that detects your geographic l
 ### 1. Clone or Open the Project
 Ensure you are inside the project directory:
 ```bash
-cd "F:\Dokumenku\AI Roadmap\python-cli\weather-cli"
+git clone https://github.com/rizkiarafi/weather-cli.git
 ```
 
 ### 2. Set Up a Virtual Environment (Optional but Recommended)
